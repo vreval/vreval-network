@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  reverse-proxy:
+    depends_on:
+      - vreval
+    build:
+      context: .
+      dockerfile: dockerfile.nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - backend
+    volumes:
+      - ./nginx.reverse-proxy:/etc/nginx/conf.d
+      - public-assets:/var/www/public-assets
+
+  vreval:
+    image: nginx:stable-alpine
+    depends_on:
+      - php
+    networks:
+      - backend
+    volumes:
+      - ./nginx.vreval:/etc/nginx/conf.d
+      - ./src:/var/www/html
+
+  mysql:
+    image: mysql:8
+    networks:
+      - backend
+    environment:
+      MYSQL_DATABASE: vreval
+      MYSQL_USER: vreval
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    volumes:
+      - ./mysql:/var/lib/mysql
+
+  php:
+    user: "${UID}:${GID}"
+    build:
+      context: .
+      dockerfile: dockerfile.php
+    networks:
+      - backend
+    volumes:
+      - ./src:/var/www/html
+      - public-assets:/var/www/html/storage/app/public/uploads
+    working_dir: /var/www/html
+
+  composer:
+    image: composer:2
+    volumes:
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+
+  npm:
+    image: node:current-alpine
+    volumes:
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["npm"]
+
+  artisan:
+    build:
+      context: .
+      dockerfile: dockerfile.php
+    networks:
+      - backend
+    volumes:
+      - ./src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["php", "/var/www/html/artisan"]
+
+networks:
+  backend:
+    name: backend
+    external: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.0.0/24
+
+volumes:
+  public-assets:
+    external: false
