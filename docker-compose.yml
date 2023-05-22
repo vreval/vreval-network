@@ -1,13 +1,12 @@
 version: "3.8"
 
 services:
-  vreval:
+  platform:
     image: nginx:stable-alpine
     depends_on:
       - php
     ports:
       - "80:80"
-      - "443:443"
     networks:
       - backend
     volumes:
@@ -64,7 +63,7 @@ services:
 
 networks:
   backend:
-    name: backend
+    name: vreval-network
     external: false
     ipam:
       driver: default
