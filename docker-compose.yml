@@ -1,29 +1,17 @@
 version: "3.8"
 
 services:
-  reverse-proxy:
+  vreval:
+    image: nginx:stable-alpine
     depends_on:
-      - vreval
-    build:
-      context: .
-      dockerfile: dockerfile.nginx
+      - php
     ports:
       - "80:80"
       - "443:443"
     networks:
       - backend
     volumes:
-      - ./nginx.reverse-proxy:/etc/nginx/conf.d
-      - public-assets:/var/www/public-assets
-
-  vreval:
-    image: nginx:stable-alpine
-    depends_on:
-      - php
-    networks:
-      - backend
-    volumes:
-      - ./nginx.vreval:/etc/nginx/conf.d
+      - ./nginx:/etc/nginx/conf.d
       - ./src:/var/www/html
 
   mysql:
@@ -47,7 +35,7 @@ services:
       - backend
     volumes:
       - ./src:/var/www/html
-      - public-assets:/var/www/html/storage/app/public/uploads
+      - ./uploads:/var/www/html/storage/app/public/uploads
     working_dir: /var/www/html
 
   composer:
@@ -82,7 +70,3 @@ networks:
       driver: default
       config:
         - subnet: 10.0.0.0/24
-
-volumes:
-  public-assets:
-    external: false
